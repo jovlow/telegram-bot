@@ -160,7 +160,7 @@ async def send_good_morning(context: ContextTypes.DEFAULT_TYPE):
             print(f"Failed to send morning message to {chat_id}: {e}")
 
 def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
