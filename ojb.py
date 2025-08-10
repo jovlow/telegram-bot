@@ -1,21 +1,23 @@
 import random
-from datetime import time
+from datetime import date, time
 import pytz
-import asyncio
-import nest_asyncio
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes,
+    Application, CommandHandler, MessageHandler, ContextTypes,
     ConversationHandler, filters
 )
 
-BOT_TOKEN = '7275364988:AAG_rG6h49Jh_8HpUgaXdfYAy86mzY80HlE'
+import os
+
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("No BOT_TOKEN found in environment variables.")
+
 ASKING_HELP = 1
 
-# Replace this with your partner's actual chat_id
-PARTNER_CHAT_ID = [1224169124]
+# Replace with actual chat IDs (single int or list of ints)
+PARTNER_CHAT_IDS = [1224169124]  # list to support multiple IDs
 
-# Start with password verification
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Welcome! Please enter the password to continue:")
     return 0
@@ -28,12 +30,13 @@ async def verify_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Wrong password. Try again.")
         return 0
 
-# Function to show main menu
 async def show_main_menu(update: Update):
-    keyboard = [["tell me a joke", "want jovie..."],
-                ["love note pws", "daily check-in"],
-                ["gimme hug", "how many days left?"],
-                ["main menu"]]
+    keyboard = [
+        ["tell me a joke", "want jovie..."],
+        ["love note pws", "daily check-in"],
+        ["gimme hug", "how many days left?"],
+        ["main menu"]
+    ]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=False, resize_keyboard=True)
     await update.message.reply_text(
         "✅ welcome to jovie's main menu!\n\n"
@@ -43,7 +46,6 @@ async def show_main_menu(update: Update):
     )
     return ASKING_HELP
 
-# Main interactive logic with global phrase checks integrated
 async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_msg = update.message.text.lower()
 
@@ -51,7 +53,12 @@ async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(random.choice([
             "i love you too!!",
             "I LOVE YOU I LOVE YOU I LOVE YOU",
-            "but i love you the most idc"
+            "but i love you the most idc",
+            "i lub babie too",
+            "i love you!",
+            "i love you more",
+            "you're babie... but i love you too!",
+            "ilyt!"
         ]))
         return ASKING_HELP
 
@@ -59,7 +66,9 @@ async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(random.choice([
             "i miss you too hmph",
             "i miss you more",
-            "i miss you the mostestestestest"
+            "i miss you the mostestestestest",
+            "i miss yu most",
+            "idc i win because i miss you more"
         ]))
         return ASKING_HELP
 
@@ -77,7 +86,7 @@ async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = ReplyKeyboardMarkup([
             ["am sad...", "am happi!"],
             ["angry?", "did we argue?"],
-            ["Main Menu"]
+            ["main menu"]
         ], one_time_keyboard=True, resize_keyboard=True)
         await update.message.reply_text("aww baby... how are you feeling?", reply_markup=reply_markup)
 
@@ -114,7 +123,6 @@ async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ]), reply_markup=await get_main_menu())
 
     elif "how many days left" in user_msg:
-        from datetime import date
         next_meeting = date(2025, 9, 5)
         days_left = (next_meeting - date.today()).days
         await update.message.reply_text(f"There are {days_left} days left until we see each other again! 💕", reply_markup=await get_main_menu())
@@ -130,26 +138,29 @@ async def reply_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def get_main_menu():
     return ReplyKeyboardMarkup(
-        [["tell me a joke", "want jovie..."],
-        ["love note pws", "daily check-in"],
-        ["gimme hug", "how many days left?"],
-        ["main menu"]],
+        [
+            ["tell me a joke", "want jovie..."],
+            ["love note pws", "daily check-in"],
+            ["gimme hug", "how many days left?"],
+            ["main menu"]
+        ],
         one_time_keyboard=False,
         resize_keyboard=True
     )
 
-# Cancel handler
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("baibao! use /start to activate me again!", reply_markup=ReplyKeyboardRemove())
     return ConversationHandler.END
 
-# Daily good morning message job
 async def send_good_morning(context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=PARTNER_CHAT_ID, text="🌞 Good morning my love! Hope you have a beautiful day 💛")
+    for chat_id in PARTNER_CHAT_IDS:
+        try:
+            await context.bot.send_message(chat_id=chat_id, text="🌞 Good morning my love! Hope you have a beautiful day 💛")
+        except Exception as e:
+            print(f"Failed to send morning message to {chat_id}: {e}")
 
-# Main runner
-async def main():
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+def main():
+    app = Application.builder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start)],
@@ -171,28 +182,10 @@ async def main():
     )
 
     print("Bot is running...")
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == '__main__':
-    import sys
-
-    try:
-        import nest_asyncio
-        nest_asyncio.apply()
-        loop = asyncio.get_event_loop()
-
-        # If the loop is closed, create a new one
-        if loop.is_closed():
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-
-        loop.run_until_complete(main())
-    except Exception as e:
-        print("❌ Error:", e)
-        sys.exit(1)
+    main()
 
 
 #await asyncio.sleep(1) for bot to wait between messages
-#token: 7275364988:AAG_rG6h49Jh_8HpUgaXdfYAy86mzY80HlE
-#ids: 1224169124, 1264425167
-#jov: 1224169124, yc: 1264425167
