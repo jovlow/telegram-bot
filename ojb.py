@@ -159,7 +159,9 @@ async def send_good_morning(context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             print(f"Failed to send morning message to {chat_id}: {e}")
 
-def main():
+import asyncio
+
+async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -173,7 +175,6 @@ def main():
 
     app.add_handler(conv_handler)
 
-    # Schedule good morning job at 7:00 AM Singapore time
     singapore_tz = pytz.timezone("Asia/Singapore")
     app.job_queue.run_daily(
         send_good_morning,
@@ -182,10 +183,10 @@ def main():
     )
 
     print("Bot is running...")
-    app.run_polling()
+    await app.run_polling()
 
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 #await asyncio.sleep(1) for bot to wait between messages
