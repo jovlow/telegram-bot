@@ -3,7 +3,7 @@ from datetime import date, time
 import pytz
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
-    Application, CommandHandler, MessageHandler, ContextTypes,
+    ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes,
     ConversationHandler, filters
 )
 
