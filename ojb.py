@@ -187,7 +187,7 @@ async def main():
     webhook_url = f"{WEBHOOK_URL}/{url_path}"
 
     # Start webhook
-    await app.start_webhook(
+    await app.run_webhook(
         listen="0.0.0.0",
         port=PORT,
         url_path=url_path,
