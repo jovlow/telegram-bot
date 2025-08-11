@@ -1,8 +1,7 @@
 import os
 import random
-from datetime import date, time
+from datetime import date, time as dtime
 import pytz
-import asyncio
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes,
@@ -158,7 +157,7 @@ async def send_good_morning(context: ContextTypes.DEFAULT_TYPE):
             print(f"Failed to send morning message to {chat_id}: {e}")
 
 # --- Main ---
-async def main():
+def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -174,15 +173,15 @@ async def main():
 
     app.job_queue.run_daily(
         send_good_morning,
-        time=time(hour=7, minute=0, tzinfo=SINGAPORE_TZ),
+        time=dtime(hour=7, minute=0, tzinfo=SINGAPORE_TZ),
         name="morning_message"
     )
 
     print("Bot is running...")
-    await app.run_polling()
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
 
 
 #await asyncio.sleep(1) for bot to wait between messages
