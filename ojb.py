@@ -13,12 +13,11 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("No BOT_TOKEN found in environment variables.")
 
-# Replace with your domain or Render URL, e.g. https://your-app.onrender.com
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # e.g. https://your-app.onrender.com
 if not WEBHOOK_URL:
     raise ValueError("No WEBHOOK_URL found in environment variables.")
 
-PORT = int(os.getenv("PORT", "8443"))  # Default port Telegram requires
+PORT = int(os.getenv("PORT", "8443"))
 
 PASSWORD = "iloveyiyi"
 PARTNER_CHAT_IDS = [1224169124]  # multiple IDs supported
@@ -175,34 +174,29 @@ async def main():
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
-
     app.add_handler(conv_handler)
 
-    singapore_tz = pytz.timezone("Asia/Singapore")
+    # Schedule daily morning message job
     app.job_queue.run_daily(
         send_good_morning,
-        time=time(hour=7, minute=0, tzinfo=singapore_tz),
+        time=time(hour=7, minute=0, tzinfo=SINGAPORE_TZ),
         name="morning_message"
     )
 
+    url_path = BOT_TOKEN  # secure path for webhook
+    webhook_url = f"{WEBHOOK_URL}/{url_path}"
+
     # Start webhook
-    await app.initialize()
-    await app.start()
-
-    # Set webhook URL (Telegram will send updates here)
-    await app.bot.set_webhook(WEBHOOK_URL)
-
-    # Start serving webhook requests
-    await app.updater.start_webhook(
+    await app.start_webhook(
         listen="0.0.0.0",
         port=PORT,
-        webhook_url=WEBHOOK_URL
+        url_path=url_path,
+        webhook_url=webhook_url,
     )
+    print(f"Bot is running with webhook at {webhook_url}")
 
-    print("Bot is running with webhook...")
-    
-    # Run until cancelled
-    await asyncio.Event().wait()
+    # Block until the bot is stopped
+    await app.idle()
 
 if __name__ == "__main__":
     asyncio.run(main())
