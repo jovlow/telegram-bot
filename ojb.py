@@ -1,17 +1,24 @@
 import os
 import random
-from datetime import date, time as dtime
+from datetime import date, time
 import pytz
+import asyncio
 from telegram import Update, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telegram.ext import (
     ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes,
     ConversationHandler, filters
 )
 
-# --- Config ---
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 if not BOT_TOKEN:
     raise ValueError("No BOT_TOKEN found in environment variables.")
+
+# Replace with your domain or Render URL, e.g. https://your-app.onrender.com
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+if not WEBHOOK_URL:
+    raise ValueError("No WEBHOOK_URL found in environment variables.")
+
+PORT = int(os.getenv("PORT", "8443"))  # Default port Telegram requires
 
 PASSWORD = "iloveyiyi"
 PARTNER_CHAT_IDS = [1224169124]  # multiple IDs supported
@@ -157,7 +164,7 @@ async def send_good_morning(context: ContextTypes.DEFAULT_TYPE):
             print(f"Failed to send morning message to {chat_id}: {e}")
 
 # --- Main ---
-def main():
+async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     conv_handler = ConversationHandler(
@@ -171,17 +178,34 @@ def main():
 
     app.add_handler(conv_handler)
 
+    singapore_tz = pytz.timezone("Asia/Singapore")
     app.job_queue.run_daily(
         send_good_morning,
-        time=dtime(hour=7, minute=0, tzinfo=SINGAPORE_TZ),
+        time=time(hour=7, minute=0, tzinfo=singapore_tz),
         name="morning_message"
     )
 
-    print("Bot is running...")
-    app.run_polling()
+    # Start webhook
+    await app.initialize()
+    await app.start()
+
+    # Set webhook URL (Telegram will send updates here)
+    await app.bot.set_webhook(WEBHOOK_URL)
+
+    # Start serving webhook requests
+    await app.updater.start_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        webhook_url=WEBHOOK_URL
+    )
+
+    print("Bot is running with webhook...")
+    
+    # Run until cancelled
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
 
 
 #await asyncio.sleep(1) for bot to wait between messages
